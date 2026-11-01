@@ -73,3 +73,21 @@ export const readNight: ReadNight = (runsDir, night) => {
   const result: DigestNight = { night, rows: toRows(lines), badLines };
   return result;
 };
+
+/** Lines per status in a night's log. Bad lines count as none. null when the night has no file. */
+export function countStatuses(runsDir: string, night: string): Record<JobStatus, number> | null {
+  if (!NIGHT.test(night)) return null;
+  let text: string;
+  try {
+    text = readFileSync(join(runsDir, `${night}.jsonl`), 'utf8');
+  } catch {
+    return null;
+  }
+  const counts: Record<JobStatus, number> = { ok: 0, retry: 0, fail: 0 };
+  for (const raw of text.split(/\r?\n/)) {
+    if (raw.trim() === '') continue;
+    const line = parseLine(raw);
+    if (line) counts[line.status] += 1;
+  }
+  return counts;
+}
